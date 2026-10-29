@@ -1,0 +1,112 @@
+<style>
+  @page { size: A3 landscape; margin: 10mm; }
+  body { font-family: Arial, sans-serif; font-size: 10px; color: black; background: white; margin: 0; padding: 0; }
+  table { border-collapse: collapse; width: 100%; table-layout: fixed; }
+  th, td { border: 1px solid black; padding: 2px 4px; vertical-align: top; word-wrap: break-word; }
+  th { font-weight: bold; text-align: center; vertical-align: middle; }
+  .center { text-align: center; }
+  .nowrap { white-space: nowrap; }
+  .bold { font-weight: bold; }
+</style>
+
+<table>
+  <thead>
+    <tr>
+      <th rowspan="2" style="width: 3%;">№ закл. / Дата</th>
+      <th colspan="2">Общие сведения</th>
+      <th colspan="2">Оборудование</th>
+      <th colspan="7">Параметры настройки</th>
+      <th colspan="10">Результаты контроля</th>
+      <th rowspan="2" style="width: 4%;">Оценка</th>
+      <th rowspan="2" style="width: 7%;">ФИО</th>
+      <th rowspan="2" style="width: 5%;">Подпись</th>
+      <th rowspan="2" style="width: 3%;">№ записи</th>
+    </tr>
+    <tr>
+      <th style="width: 8%;">Изделие / Деталь / Заказ / Объект / Материал / Толщина / Объём</th>
+      <th style="width: 8%;">Норм. документ / Метод / Карта</th>
+      <th style="width: 8%;">ПО / Дефектоскоп / Сканер</th>
+      <th style="width: 10%;">Преобразователи и призмы</th>
+      <th style="width: 5%;">Канал / Тип скан.</th>
+      <th style="width: 4%;">Врем. разв.</th>
+      <th style="width: 5%;">Угол / Фокус</th>
+      <th style="width: 7%;">Расст. / Предус. / Усред.</th>
+      <th style="width: 5%;">Смещение / Шаг Y</th>
+      <th style="width: 5%;">Диапазон / Шаг X</th>
+      <th style="width: 7%;">НО / Настр. / ВЭ / Усил.</th>
+      <th style="width: 4%;">№ уч.</th>
+      <th style="width: 5%;">Aдеф / Sдеф</th>
+      <th style="width: 4%;">Yн:Yк</th>
+      <th style="width: 4%;">Прот. Y</th>
+      <th style="width: 4%;">Xн:Xк</th>
+      <th style="width: 4%;">Прот. X</th>
+      <th style="width: 4%;">Zн:Zк</th>
+      <th style="width: 4%;">Высота</th>
+      <th style="width: 5%;">Тип дефекта</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% set ns = namespace(first_doc_row=True) %}
+    {% for ch in channels %}
+      {% set meas = ch.measurement %}
+      {% set conv = channel_converters.get(meas[11], '-') %}
+      
+      {% for row in ch.plan %}
+        {% set is_first_in_channel = loop.first %}
+        {% set is_first_in_doc = ns.first_doc_row %}
+        {% set ns.first_doc_row = False %}
+        
+        <tr>
+          {% if is_first_in_doc %}
+            <td rowspan="{{ total_data_rows }}" class="center">{{ common_vals[0]|replace('\n', '<br>')|safe }}</td>
+            <td rowspan="{{ total_data_rows }}">{{ common_vals[1]|replace('\n', '<br>')|safe }}</td>
+            <td rowspan="{{ total_data_rows }}">{{ common_vals[2]|replace('\n', '<br>')|safe }}</td>
+            <td rowspan="{{ total_data_rows }}">{{ common_vals[3]|replace('\n', '<br>')|safe }}</td>
+          {% endif %}
+          
+          {% if is_first_in_channel %}
+            <td rowspan="{{ ch.rowspan }}" class="nowrap">{{ conv|replace('\n', '<br>')|safe }}</td>
+            <td rowspan="{{ ch.rowspan }}">{{ meas[11]|display }}<br>{{ meas[12]|display }}</td>
+            <td rowspan="{{ ch.rowspan }}" class="center">{{ meas[13]|display }}</td>
+            <td rowspan="{{ ch.rowspan }}" class="center">{{ meas[14]|display }}<br>{{ meas[15]|display }}</td>
+            <td rowspan="{{ ch.rowspan }}" class="center">{{ meas[16]|display }} / {{ meas[17]|display }} / {{ meas[18]|display }}</td>
+            <td rowspan="{{ ch.rowspan }}" class="center">{{ meas[19]|display }}</td>
+            <td rowspan="{{ ch.rowspan }}" class="center">{{ meas[20]|display }}</td>
+            <td rowspan="{{ ch.rowspan }}">{{ meas[21]|display }}<br>{{ meas[22]|display }}<br>{{ meas[23]|display }}<br>{{ meas[24]|display }}</td>
+          {% endif %}
+          
+          {% if row.type == 'obj_header' %}
+            <td colspan="9" class="center bold">{{ row.payload }}</td>
+            <td></td><td></td><td></td><td></td>
+          {% else %}
+            {% set d = row.payload %}
+            <td class="center">{{ d[0]|display }}</td>
+            <td class="center">{% if method_is_tofd %}-{% else %}{{ d[1]|display }}{% endif %}</td>
+            <td class="center">{{ d[2]|display }}</td>
+            <td class="center">{{ d[3]|display }}</td>
+            <td class="center">{{ d[4]|display }}</td>
+            <td class="center">{{ d[5]|display }}</td>
+            <td class="center">{{ d[6]|display }}</td>
+            <td class="center">{{ d[7]|display }}</td>
+            <td class="center">{{ d[8]|display }}</td>
+            <td class="center">{{ d[9]|display }}</td>
+            <td class="center">{{ d[10]|display }}</td>
+            
+            {% set sig_fios = [] %}
+            {% for f in d[10].split(',') %}
+              {% if f.strip() in signed_fios %}
+                 {% set _ = sig_fios.append(f.strip()) %}
+              {% endif %}
+            {% endfor %}
+            <td class="center">{{ sig_fios|join(', ') }}</td>
+            <td></td>
+          {% endif %}
+          
+          {% if is_first_in_doc %}
+            <td rowspan="{{ total_data_rows }}" class="center">{{ record_num|display }}</td>
+          {% endif %}
+        </tr>
+      {% endfor %}
+    {% endfor %}
+  </tbody>
+</table>

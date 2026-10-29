@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Журнал {{ journal_name }}</title>
+<style>
+  @page { size: A3 landscape; margin: 1cm; }
+  body { font-family: Arial, sans-serif; font-size: 10px; color: #222; }
+  h1 { font-size: 15px; margin: 0 0 8px; }
+  table { border-collapse: collapse; width: 100%; table-layout: fixed; }
+  th, td { border: 1px solid #777; padding: 4px; vertical-align: top; overflow-wrap: anywhere; }
+  th { background: #e8eef7; font-weight: bold; text-align: center; }
+  tbody tr:nth-child(even) { background: #f7f7f7; }
+  .number { width: 12%; }
+  .item { width: 13%; }
+  .detail { width: 13%; }
+  .order { width: 9%; }
+  .object { width: 13%; }
+  .quality { width: 7%; text-align: center; }
+  .fio { width: 12%; }
+  .signature { width: 13%; }
+  .record { width: 8%; text-align: center; }
+  .empty { text-align: center; color: #666; }
+</style>
+</head>
+<body>
+<h1>Журнал {{ journal_name|display }}</h1>
+<table>
+  <thead>
+    <tr>
+      <th class="number">№ заключения / Дата</th>
+      <th class="item">Изделие</th>
+      <th class="detail">Деталь</th>
+      <th class="order">№ заказа</th>
+      <th class="object">Объект контроля</th>
+      <th class="quality">Оценка</th>
+      <th class="fio">ФИО Дефектоскопист</th>
+      <th class="signature">Статус подписи</th>
+      <th class="record">№ записи</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for row in rows %}
+    <tr>
+      <td>{{ row.report_num_date|display }}</td>
+      <td>{{ row.izdeliye|display }}</td>
+      <td>{{ row.detal|display }}</td>
+      <td>{{ row.order_num|display }}</td>
+      <td>{{ row.object_kontr|display }}</td>
+      <td class="quality">{{ row.quality|display }}</td>
+      <td>{{ row.fio_list|display }}</td>
+      <td>{{ row.sign_status|display }}</td>
+      <td class="record">{{ row.record_num|display }}</td>
+    </tr>
+  {% else %}
+    <tr><td class="empty" colspan="9">В журнале нет записей.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</body>
+</html>
