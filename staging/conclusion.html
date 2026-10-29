@@ -1,0 +1,197 @@
+{#- ============================================================
+    Шаблон заключения УЗК для печати через Chromium (QWebEngineView).
+
+    ВАЖНО:
+      * Правило @page здесь НЕ используется — размер листа (A3),
+        ориентация (Landscape) и поля (10 мм) задаются в Python
+        через QPageLayout (pdf_generator._make_page_layout).
+      * Таблица строго 25 колонок, table-layout: fixed; width: 100%.
+      * Все значения rowspan приходят из Python уже готовыми:
+          total_data_rows — rowspan общих сведений (только первая строка),
+          channel.rowspan — rowspan блока канала.
+      * Логика «объединять общие сведения только для самой первой строки
+        документа» реализована через ns = namespace(first_doc_row=True).
+      * Базовые стили тега <table> заданы инлайн (см. ниже), чтобы таблица
+        не ломалась при переносе фрагмента HTML в другой документ.
+   ============================================================ -#}
+{% set ns = namespace(first_doc_row=True) %}
+<table style="width: 100%; table-layout: fixed; border-collapse: collapse;" border="1" cellspacing="0" cellpadding="1">
+  <colgroup>
+    <col style="width: 4.0%;"><col style="width: 1.6%;"><col style="width: 1.6%;"><col style="width: 1.6%;">
+    <col style="width: 1.6%;"><col style="width: 1.6%;"><col style="width: 1.6%;"><col style="width: 1.6%;">
+    <col style="width: 1.6%;"><col style="width: 1.6%;"><col style="width: 1.6%;"><col style="width: 1.6%;">
+    <col style="width: 1.6%;"><col style="width: 1.6%;"><col style="width: 1.6%;"><col style="width: 1.6%;">
+    <col style="width: 1.6%;"><col style="width: 1.6%;"><col style="width: 1.6%;"><col style="width: 1.6%;">
+    <col style="width: 1.6%;"><col style="width: 1.6%;"><col style="width: 1.6%;"><col style="width: 1.6%;">
+    <col style="width: 18.0%;">
+  </colgroup>
+  <thead>
+    <tr>
+      <th colspan="2">Общие сведения</th>
+      <th colspan="4">Способ контроля</th>
+      <th colspan="2">Приборы и параметры</th>
+      <th colspan="9">Характеристика дефектов</th>
+      <th colspan="8">Заключение</th>
+    </tr>
+    <tr>
+      <th colspan="2">Изделие, сокр. наименование объекта контроля, № чертежа</th>
+      <th colspan="4">Вид, способ, метод, тип преобразователей, схема, кол-во каналов</th>
+      <th colspan="2">Преобразователь, усиление, дискриминатор, глубина настройки, скорость вращения</th>
+      <th>№ рисунка</th><th>Амп,&nbsp;мм</th><th colspan="2">Y&nbsp;начало</th><th colspan="2">Y&nbsp;конец</th>
+      <th colspan="2">Длина&nbsp;Y</th><th colspan="2">X&nbsp;начало</th><th colspan="2">X&nbsp;конец</th>
+      <th colspan="2">Длина&nbsp;X</th><th colspan="2">Z&nbsp;начало</th><th colspan="2">Z&nbsp;конец</th>
+      <th>Высота,</th><th>Тип&nbsp;дефекта</th><th>Оценка</th><th>Дефектоскопист</th>
+      <th>№&nbsp;протокола</th><th>Длина&nbsp;протокола</th><th>Условное&nbsp;обозн.</th>
+      <th>Качество&nbsp;сварного соединения</th><th>Толщина&nbsp;металла</th><th>Ø&nbsp;внутр.</th>
+      <th>Норма&nbsp;допуска</th><th>Примечание</th>
+    </tr>
+  </thead>
+  <tbody>
+    {%- for channel in channels %}
+    {%- set meas = channel.measurement %}
+    {%- for row in channel.rows %}
+    <tr>
+      {#- ---------- Общие сведения: объединяем ТОЛЬКО первую строку документа ---------- #}
+      {% if ns.first_doc_row %}
+      <td rowspan="{{ total_data_rows }}" style="vertical-align: top;">{{ common_vals[0]|nl2br }}</td>
+      {% endif %}
+      {#- ---------- Способ контроля: 4 ячейки ---------- #}
+      {% if ns.first_doc_row %}
+      <td rowspan="{{ channel.rowspan }}" style="vertical-align: top;">{{ meas[14]|display }}</td>
+      {% else %}
+      <td>{{ meas[14]|display }}</td>
+      {% endif %}
+      {% if ns.first_doc_row %}
+      <td rowspan="{{ channel.rowspan }}" style="vertical-align: top;">{{ meas[15]|display }}</td>
+      {% else %}
+      <td>{{ meas[15]|display }}</td>
+      {% endif %}
+      {% if ns.first_doc_row %}
+      <td rowspan="{{ channel.rowspan }}" class="center">{{ meas[16]|display }}</td>
+      {% else %}
+      <td class="center">{{ meas[16]|display }}</td>
+      {% endif %}
+      {% if ns.first_doc_row %}
+      <td rowspan="{{ channel.rowspan }}" style="vertical-align: top;">{{ meas[17]|display }}</td>
+      {% else %}
+      <td>{{ meas[17]|display }}</td>
+      {% endif %}
+      {#- ---------- Приборы и параметры: 2 ячейки ---------- #}
+      {% if ns.first_doc_row %}
+      <td rowspan="{{ channel.rowspan }}" style="vertical-align: top;">{{ channel.converters|nl2br }}</td>
+      {% else %}
+      <td style="vertical-align: top;">{{ channel.converters|nl2br }}</td>
+      {% endif %}
+      {% if ns.first_doc_row %}
+      <td rowspan="{{ channel.rowspan }}" style="vertical-align: top;">{{ meas[18]|nl2br }}</td>
+      {% else %}
+      <td style="vertical-align: top;">{{ meas[18]|nl2br }}</td>
+      {% endif %}
+      {#- ---------- Характеристика дефектов: 9 ячеек ---------- #}
+      {% if row.kind == 'obj_header' %}
+      {#- Объекты контроля: несколько объектов выводятся отдельной строкой #}
+      <td colspan="9" class="bold center">Объект контроля:&nbsp;{{ row.obj|display }}</td>
+      {% elif row.kind == 'no_defect' %}
+      <td class="center">-</td><td class="center">-</td><td colspan="2" class="center">-</td>
+      <td colspan="2" class="center">-</td><td colspan="2" class="center">-</td>
+      <td colspan="2" class="center">-</td><td colspan="2" class="center">-</td>
+      <td colspan="2" class="center">-</td><td colspan="2" class="center">-</td>
+      <td class="center">-</td><td class="center">-</td><td class="center">уд.</td>
+      <td class="center">{{ (row.d[10] if row.d and row.d|length > 10 else '')|display }}</td>
+      {% else %}
+      {#- d: [0]=id, [1]=plot_num, [2]=amp, [3]=y_start, [4]=y_end, [5]=len_y,
+           [6]=x_start, [7]=x_end, [8]=len_x, [9]=z_start, [10]=z_end,
+           [11]=height, [12]=type, [13]=quality, [14]=fio #}
+      {%- set d = row.d %}
+      <td class="center">{{ d[1]|display }}</td>
+      <td class="center">{{ d[2]|display }}</td>
+      <td colspan="2" class="center">{{ d[3]|display }}</td>
+      <td colspan="2" class="center">{{ d[4]|display }}</td>
+      <td colspan="2" class="center">{{ d[5]|display }}</td>
+      <td colspan="2" class="center">{{ d[6]|display }}</td>
+      <td colspan="2" class="center">{{ d[7]|display }}</td>
+      <td colspan="2" class="center">{{ d[8]|display }}</td>
+      <td colspan="2" class="center">{{ d[9]|display }}</td>
+      <td colspan="2" class="center">{{ d[10]|display }}</td>
+      <td class="center">{{ d[11]|display }}</td>
+      <td class="center">{{ d[12]|display }}</td>
+      <td class="center">{{ d[13]|display }}</td>
+      <td class="center">{{ d[14]|display }}</td>
+      {% endif %}
+      {#- ---------- Заключение: 8 ячеек ---------- #}
+      {% if ns.first_doc_row %}
+      <td rowspan="{{ channel.rowspan }}" class="center">{{ meas[19]|display }}</td>
+      {% else %}
+      <td class="center">{{ meas[19]|display }}</td>
+      {% endif %}
+      {% if ns.first_doc_row %}
+      <td rowspan="{{ channel.rowspan }}" class="center">{{ meas[20]|display }}</td>
+      {% else %}
+      <td class="center">{{ meas[20]|display }}</td>
+      {% endif %}
+      {% if ns.first_doc_row %}
+      <td rowspan="{{ channel.rowspan }}" class="center">{{ meas[21]|display }}</td>
+      {% else %}
+      <td class="center">{{ meas[21]|display }}</td>
+      {% endif %}
+      {% if ns.first_doc_row %}
+      <td rowspan="{{ channel.rowspan }}" class="center">{{ meas[22]|display }}</td>
+      {% else %}
+      <td class="center">{{ meas[22]|display }}</td>
+      {% endif %}
+      {% if ns.first_doc_row %}
+      <td rowspan="{{ channel.rowspan }}" class="center">{{ meas[23]|display }}</td>
+      {% else %}
+      <td class="center">{{ meas[23]|display }}</td>
+      {% endif %}
+      {% if ns.first_doc_row %}
+      <td rowspan="{{ channel.rowspan }}" class="center">{{ meas[24]|display }}</td>
+      {% else %}
+      <td class="center">{{ meas[24]|display }}</td>
+      {% endif %}
+      {% if ns.first_doc_row %}
+      <td rowspan="{{ channel.rowspan }}" class="center">{{ record_num }}</td>
+      {% else %}
+      <td class="center">{{ record_num }}</td>
+      {% endif %}
+      {% if ns.first_doc_row %}
+      <td rowspan="{{ channel.rowspan }}" style="vertical-align: top;">{{ common_vals[3]|nl2br }}</td>
+      {% else %}
+      <td style="vertical-align: top;">{{ common_vals[3]|nl2br }}</td>
+      {% endif %}
+      {#- ------------------ конец строки ------------------ #}
+      {% if ns.first_doc_row %}{% set ns.first_doc_row = False %}{% endif %}
+    </tr>
+    {%- if row.kind != 'obj_header' %}
+    {#- Служебная строка: вторая колонка общих сведений (colspan=2) + примечание (colspan=22).
+        Первая колонка общих сведений остаётся объединённой (total_data_rows). #}
+    <tr>
+      {% if loop.index0 == 0 and channel_index == 0 %}
+      <td colspan="2" rowspan="{{ total_data_rows - 1 }}" style="vertical-align: top;">{{ common_vals[1]|nl2br }}</td>
+      {% endif %}
+      <td colspan="22"></td>
+    </tr>
+    {%- endif %}
+    {%- endfor %}
+    {%- endfor %}
+  </tbody>
+</table>
+
+{#- Подписи: сравниваем ФИО дефектоскописта с JSON-списком подписантов signed_fios -#}
+{% set defectoscopists = [] %}
+{% for channel in channels %}
+  {% for row in channel.rows %}
+    {% if row.kind == 'defect' %}
+      {% set fio = row.d[14] if row.d|length > 14 else '' %}
+      {% if fio and fio not in defectoscopists %}
+        {% set _ = defectoscopists.append(fio) %}
+      {% endif %}
+    {% endif %}
+  {% endfor %}
+{% endfor %}
+{% set signed_list = defectoscopists|intersect(signed_fios)|list %}
+{% if signed_list %}
+<p style="margin-top: 10px; font-size: 10pt;">Подписали: {{ signed_list|join(', ') }}</p>
+{% else %}
+<p style="margin-top: 10px; font-size: 10pt;">Подписи: {{ signed_fios|join(', ') if signed_fios else '—' }}</p>
+{% endif %}
